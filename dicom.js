@@ -25,8 +25,6 @@ renderingEngine.enableElement({
   element,
 });
 
-const vp = renderingEngine.getViewport(viewportId);
-console.log('viewport:', vp);
 
 const viewport = renderingEngine.getViewport(viewportId);
 
