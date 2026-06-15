@@ -1,42 +1,57 @@
-import { init as coreInit } from '@cornerstonejs/core';
-import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
-import * as cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import {
+  RenderingEngine,
+  Enums,
+  init as coreInit,
+} from '@cornerstonejs/core';
 
+import {
+  init as dicomImageLoaderInit,
+  wadouri,
+} from '@cornerstonejs/dicom-image-loader';
 
-await coreInit();
-await dicomImageLoaderInit();
+async function run() {
+  await coreInit();
 
+  dicomImageLoaderInit({
+    maxWebWorkers: 1,
+    useLegacyMetadataProvider : true,
+  });
 
-const content = document.getElementById('content');
+  const content = document.getElementById('content');
+  const element = document.createElement('div');
 
-const element = document.createElement('div');
-element.style.width = '700px';
-element.style.height = '700px';
+  element.style.width = '700px';
+  element.style.height = '700px';
 
-content.appendChild(element);
+  content.appendChild(element);
 
-const renderingEngine = new RenderingEngine('myRenderingEngine');
-const viewportId = 'CT_AXIAL_STACK';
+  const renderingEngine = new RenderingEngine('myRenderingEngine');
 
-renderingEngine.enableElement({
-  viewportId,
-  type: Enums.ViewportType.STACK,
-  element,
-});
+  renderingEngine.enableElement({
+    viewportId: 'CT_AXIAL_STACK',
+    type: Enums.ViewportType.STACK,
+    element,
+  });
 
+  const viewport = renderingEngine.getViewport('CT_AXIAL_STACK');
+  const input = document.getElementById('dicom');
 
-const viewport = renderingEngine.getViewport(viewportId);
+  input.addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
 
-const input = document.getElementById('dicom');
+    if (!file) {
+      return;
+    }
 
-input.addEventListener('change', async (event) => {
-  const file = event.target.files[0];
+    const imageId = wadouri.fileManager.add(file);
 
-  const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
+    try {
+      await viewport.setStack([imageId]);
+      viewport.render();
+    } catch (error) {
+      console.error('Failed to load DICOM image:', error);
+    }
+  });
+}
 
-  console.log(imageId);
-
-  await viewport.setStack([imageId] , 0);
-  viewport.render();
-});
+run().catch(console.error);
