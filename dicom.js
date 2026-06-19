@@ -14,26 +14,27 @@ async function run() {
 
   dicomImageLoaderInit({
     maxWebWorkers: 1,
-    useLegacyMetadataProvider : true,
+    useLegacyMetadataProvider: true,
   });
 
   const content = document.getElementById('content');
-  const element = document.createElement('div');
 
+  const element = document.createElement('div');
   element.style.width = '700px';
   element.style.height = '700px';
 
   content.appendChild(element);
 
   const renderingEngine = new RenderingEngine('myRenderingEngine');
+  const viewportId = 'CT_AXIAL_STACK';
 
   renderingEngine.enableElement({
-    viewportId: 'CT_AXIAL_STACK',
+    viewportId,
     type: Enums.ViewportType.STACK,
     element,
   });
 
-  const viewport = renderingEngine.getViewport('CT_AXIAL_STACK');
+  const viewport = renderingEngine.getViewport(viewportId);
   const input = document.getElementById('dicom');
 
   input.addEventListener('change', async (event) => {
@@ -48,6 +49,8 @@ async function run() {
     try {
       await viewport.setStack([imageId]);
       viewport.render();
+
+      console.log('Render complete');
     } catch (error) {
       console.error('Failed to load DICOM image:', error);
     }
