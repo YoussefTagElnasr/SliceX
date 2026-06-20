@@ -1,65 +1,40 @@
-import { metaData } from '@cornerstonejs/core';
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
-/**
- * preloads imageIds metadata in memory
- **/
-async function prefetchMetadataInformation(imageIdsToPrefetch) {
-  for (let i = 0; i < imageIdsToPrefetch.length; i++) {
-    await cornerstoneDICOMImageLoader.wadouri.loadImage(imageIdsToPrefetch[i])
-      .promise;
-  }
-}
+import dicomParser from 'dicom-parser';
 
-function getFrameInformation(imageId) {
-  if (imageId.includes('wadors:')) {
-    const frameIndex = imageId.indexOf('/frames/');
-    const imageIdFrameless =
-      frameIndex > 0 ? imageId.slice(0, frameIndex + 8) : imageId;
-    return {
-      frameIndex,
-      imageIdFrameless,
-    };
+export async function getImageIdsFromFile(file) {
+  let numberOfFrames;
+  const arrayBuffer = await file.arrayBuffer();
+  const byteArray = new Uint8Array(arrayBuffer);
+
+  const dataSet = dicomParser.parseDicom(byteArray);
+
+  const numberOfFramesStr = dataSet.string('x00280008');
+
+  if(numberOfFramesStr){
+    numberOfFrames = parseInt(numberOfFramesStr , 10)
   } else {
-    const frameIndex = imageId.indexOf('&frame=');
-    let imageIdFrameless =
-      frameIndex > 0 ? imageId.slice(0, frameIndex + 7) : imageId;
-    if (!imageIdFrameless.includes('&frame=')) {
-      imageIdFrameless = imageIdFrameless + '&frame=';
-    }
-    return {
-      frameIndex,
-      imageIdFrameless,
-    };
+    numberOfFrames = 1
   }
-}
-/**
- * Receives a list of imageids possibly referring to multiframe dicom images
- * and returns a list of imageid where each imageid referes to one frame.
- * For each imageId representing a multiframe image with n frames,
- * it will create n new imageids, one for each frame, and returns the new list of imageids
- * If a particular imageid no refer to a mutiframe image data, it will be just copied into the new list
- * @returns new list of imageids where each imageid represents a frame
- */
-function convertMultiframeImageIds(imageIds) {
-  const newImageIds = [];
-  imageIds.forEach((imageId) => {
-    const { imageIdFrameless } = getFrameInformation(imageId);
-    const instanceMetaData = metaData.get('multiframeModule', imageId);
-    if (
-      instanceMetaData &&
-      instanceMetaData.NumberOfFrames &&
-      instanceMetaData.NumberOfFrames > 1
-    ) {
-      const NumberOfFrames = instanceMetaData.NumberOfFrames;
-      for (let i = 0; i < NumberOfFrames; i++) {
-        const newImageId = imageIdFrameless + (i + 1);
-        newImageIds.push(newImageId);
-      }
-    } else {
-      newImageIds.push(imageId);
-    }
-  });
-  return newImageIds;
-}
 
-export { convertMultiframeImageIds, prefetchMetadataInformation };
+  console.log('numberOfFrames:', numberOfFrames);
+
+  if (isNaN(numberOfFrames) || numberOfFrames <= 0) {
+    console.warn('Invalid numberOfFrames, defaulting to 1');
+  }
+
+  const fileUrl = URL.createObjectURL(file);
+
+  const imageIds = [];
+  console.log(imageIds);
+
+  if (numberOfFrames === 1) {
+    imageIds.push(`wadouri:${fileUrl}`);
+  } else {
+    for (let i = 0; i < numberOfFrames; i++) {
+      imageIds.push(`wadouri:${fileUrl}?frame=${i}`);
+    }
+  } 
+
+  console.log(imageIds)
+
+  return imageIds;
+}

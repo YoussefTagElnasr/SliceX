@@ -6,8 +6,8 @@ import {
 
 import {
   init as dicomImageLoaderInit,
-  wadouri,
 } from '@cornerstonejs/dicom-image-loader';
+import { getImageIdsFromFile } from './helper';
 
 async function run() {
   await coreInit();
@@ -44,10 +44,9 @@ async function run() {
       return;
     }
 
-    const imageId = wadouri.fileManager.add(file);
-
+    const imageIds = await getImageIdsFromFile(file);
     try {
-      await viewport.setStack([imageId]);
+      await viewport.setStack(imageIds);
       viewport.render();
 
       console.log('Render complete');
