@@ -7,6 +7,7 @@ import {
 import {
   init as dicomImageLoaderInit,
 } from '@cornerstonejs/dicom-image-loader';
+
 import { getImageIdsFromFile } from './helper';
 
 async function run() {
@@ -45,14 +46,14 @@ async function run() {
     }
 
     const imageIds = await getImageIdsFromFile(file);
-    try {
-      await viewport.setStack(imageIds);
-      viewport.render();
 
-      console.log('Render complete');
-    } catch (error) {
-      console.error('Failed to load DICOM image:', error);
+    if (imageIds.length === 1) {
+      await viewport.setStack(imageIds);
+    } else {
+      await viewport.setStack(imageIds, 10);
     }
+
+    viewport.render();
   });
 }
 
