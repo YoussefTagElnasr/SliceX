@@ -5,8 +5,8 @@ import {
   volumeLoader,
   setVolumesForViewports,
 } from '@cornerstonejs/core';
-import cornerstoneDICOMImageLoader, { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
-import { convertMultiframeImageIds, exportImageIdsAsWadoUriFromFile, getImageIdsFromFile, sortFilesByZPosition , prefetchMetadataInformation } from './helper';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { exportImageIdsAsWadoUriFromFile,sortFilesByZPosition } from './helper';
 import { 
     init as csToolsInit,
     addTool, 
@@ -95,8 +95,6 @@ async function run() {
 
     if (sortedFiles.length === 1){
       imageIds = await exportImageIdsAsWadoUriFromFile(sortedFiles[0]);
-      await prefetchMetadataInformation(imageIds)
-      imageIds = convertMultiframeImageIds(imageIds);
     } else {
         sortedFiles.forEach((file) => {
           const objectUrl = URL.createObjectURL(file);
