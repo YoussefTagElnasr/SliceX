@@ -4,15 +4,21 @@ import {
   Enums,
   volumeLoader,
   setVolumesForViewports,
-  metaData
 } from '@cornerstonejs/core';
-import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
-import { sortFilesByZPosition } from './helper';
-import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
+import cornerstoneDICOMImageLoader, { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { convertMultiframeImageIds, exportImageIdsAsWadoUriFromFile, getImageIdsFromFile, sortFilesByZPosition , prefetchMetadataInformation } from './helper';
+import { 
+    init as csToolsInit,
+    addTool, 
+    StackScrollTool, 
+    ToolGroupManager ,
+    Enums as csToolsEnums,
+} from '@cornerstonejs/tools';
 
 
 async function run() {
   await coreInit();
+  await csToolsInit();
   dicomImageLoaderInit({ maxWebWorkers: 1 ,
     useLegacyMetadataProvider : true,
   });
@@ -58,23 +64,53 @@ async function run() {
     },
   ]);
 
-    input.addEventListener('change', async (event) => {
-    const files = Array.from(event.target.files);
+    addTool(StackScrollTool);
+    const toolGroupId = 'myVolumeToolGroup';
+    const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-    const sortedFiles = await sortFilesByZPosition(files);
+    toolGroup.addTool(StackScrollTool.toolName);
 
-    const imageIds = sortedFiles.map(file => {
-        const url = URL.createObjectURL(file);
-        return `wadouri:${url}`;
+    toolGroup.addViewport(
+        viewportId1,
+        renderingEngineId
+    );
+
+    toolGroup.addViewport(
+        viewportId2,
+        renderingEngineId
+    );
+
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+        {
+            mouseButton: csToolsEnums.MouseBindings.Wheel,
+        },
+    ],
     });
 
+  input.addEventListener('change', async (event) => {
+    let imageIds = [];
+    const files = Array.from(event.target.files);
+    const sortedFiles = await sortFilesByZPosition(files);
+
+    if (sortedFiles.length === 1){
+      imageIds = await exportImageIdsAsWadoUriFromFile(sortedFiles[0]);
+      await prefetchMetadataInformation(imageIds)
+      imageIds = convertMultiframeImageIds(imageIds);
+    } else {
+        sortedFiles.forEach((file) => {
+          const objectUrl = URL.createObjectURL(file);
+          const imageId = `wadouri:${objectUrl}`;
+          imageIds.push(imageId);
+        });
+    }
+
     const volumeId = `myVolume_${Date.now()}`;
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds : imageIds });
     await volume.load();
 
     setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId1, viewportId2]);
-    renderingEngine.renderViewports([viewportId1, viewportId2]);
-    });
+  });
 }
 
 run();

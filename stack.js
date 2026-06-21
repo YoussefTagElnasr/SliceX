@@ -4,14 +4,23 @@ import {
   init as coreInit,
 } from '@cornerstonejs/core';
 
-import {
+import cornerstoneDICOMImageLoader, {
   init as dicomImageLoaderInit,
 } from '@cornerstonejs/dicom-image-loader';
 
-import { getImageIdsFromFile } from './helper';
+import { getImageIdsFromFile, sortFilesByZPosition } from './helper';
+
+import { 
+  init as cornerstoneToolsInit,
+  addTool, 
+  StackScrollTool, 
+  ToolGroupManager ,
+  Enums as csToolsEnums,
+} from '@cornerstonejs/tools';
 
 async function run() {
   await coreInit();
+  await cornerstoneToolsInit();
 
   dicomImageLoaderInit({
     maxWebWorkers: 1,
@@ -38,14 +47,40 @@ async function run() {
   const viewport = renderingEngine.getViewport(viewportId);
   const input = document.getElementById('dicom');
 
-  input.addEventListener('change', async (event) => {
-    const file = event.target.files?.[0];
+  
+    addTool(StackScrollTool);
+    const toolGroupId = 'myVolumeToolGroup';
+    const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-    if (!file) {
-      return;
+    toolGroup.addTool(StackScrollTool.toolName);
+
+    
+    toolGroup.addViewport(
+        viewportId,
+        'myRenderingEngine'
+    );
+
+    toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+        {
+        mouseButton: csToolsEnums.MouseBindings.Wheel,
+        },
+    ],
+    });
+
+  input.addEventListener('change', async (event) => {
+    let imageIds = [];
+    const files = Array.from(event.target.files);
+    const sortedFiles = await sortFilesByZPosition(files);
+
+    if(files.length === 1){
+        imageIds = await getImageIdsFromFile(sortedFiles[0]);
     }
 
-    const imageIds = await getImageIdsFromFile(file);
+    sortedFiles.forEach((file) => {
+      const imageId = cornerstoneDICOMImageLoader.wadouri.fileManager.add(file);
+      imageIds.push(imageId);
+    })
 
     if (imageIds.length === 1) {
       await viewport.setStack(imageIds);
