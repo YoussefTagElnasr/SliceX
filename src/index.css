@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* one place to retune the palette */
+@theme {
+  --color-ink: #09070d;
+  --color-panel: #120d1c;
+  --color-edge: #2a1f3d;
+  --color-accent: #a855f7;
+}

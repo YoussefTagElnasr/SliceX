@@ -3,10 +3,14 @@
 // Retrieved 2026-06-15, License - CC BY-SA 4.0
 
 import { defineConfig } from 'vite'
-import { viteCommonjs } from "@originjs/vite-plugin-commonjs"
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 
 export default defineConfig({
   plugins: [
+    react(),
+    tailwindcss(),
     viteCommonjs()
   ],
 
