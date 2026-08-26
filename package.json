@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node test_helper.mjs"
+    "test": "node src/lib/helper.test.mjs"
   },
   "dependencies": {
     "@cornerstonejs/core": "^5.0.8",

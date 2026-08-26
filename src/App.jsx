@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import UploadDialog from './UploadDialog.jsx';
-import Viewer from './Viewer.jsx';
-import { filesToImageIds } from '../helper.js';
+import UploadDialog from './components/UploadDialog.jsx';
+import Viewer from './components/Viewer.jsx';
+import { filesToImageIds } from './lib/helper.js';
 
 export default function App() {
   const [imageIds, setImageIds] = useState(null);
