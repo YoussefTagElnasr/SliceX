@@ -1,7 +1,7 @@
-// node test_helper.mjs  — checks sortFilesByZPosition orders by slice position
+// npm test — checks sortFilesByZPosition orders by slice position
 // and drops files that are not DICOM (DICOMDIR, .DS_Store, ...).
 import assert from 'node:assert';
-import { sortFilesByZPosition } from './helper.js';
+import { sortFilesByZPosition, canBuildVolume } from './helper.js';
 
 const bytes = (s) => [...s].map((c) => c.charCodeAt(0));
 
@@ -49,5 +49,10 @@ const junk = { name: '.DS_Store', arrayBuffer: async () => new Uint8Array(64).bu
 const sorted = await sortFilesByZPosition([dicomWithZ(20), junk, dicomWithZ(-5), dicomWithZ(3)]);
 assert.deepEqual(sorted.map((f) => f.name), ['z-5.dcm', 'z3.dcm', 'z20.dcm']);
 assert.deepEqual(await sortFilesByZPosition([junk]), []);
+
+// canBuildVolume: only a multi-slice single-frame stack renders in 3D
+assert.equal(canBuildVolume(['a', 'b', 'c']), true);
+assert.equal(canBuildVolume(['a', 'b']), false);
+assert.equal(canBuildVolume(['a?frame=0', 'a?frame=1', 'a?frame=2']), false);
 
 console.log('ok');

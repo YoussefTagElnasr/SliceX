@@ -13,15 +13,11 @@
   "dependencies": {
     "@cornerstonejs/core": "^5.0.8",
     "@cornerstonejs/dicom-image-loader": "^5.0.8",
-    "@cornerstonejs/nifti-volume-loader": "^5.0.8",
-    "@cornerstonejs/streaming-image-volume-loader": "^1.86.1",
     "@cornerstonejs/tools": "^5.0.8",
-    "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@tailwindcss/vite": "^4.3.0",
     "dicom-parser": "^1.8.21",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "tailwind": "^4.0.0",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {

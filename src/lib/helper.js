@@ -1,11 +1,11 @@
 import dicomParser from 'dicom-parser';
 
 // browser-only module, imported on demand so the metadata helpers below stay
-// usable outside the browser (see test_helper.mjs)
+// usable outside the browser (see helper.test.mjs)
 const loader = () =>
   import('@cornerstonejs/dicom-image-loader').then((m) => m.default);
 
-export async function getImageIdsFromFile(file) {
+async function getImageIdsFromFile(file) {
   const baseImageId = (await loader()).wadouri.fileManager.add(file);
 
   const arrayBuffer = await file.arrayBuffer();
@@ -63,11 +63,11 @@ export async function filesToImageIds(files) {
 }
 
 
-export async function getDcmModality(file){
-  const arrayBuffer = await file.arrayBuffer();
-  const byteArray = new Uint8Array(arrayBuffer);
-  const dataSet = dicomParser.parseDicom(byteArray);
-
-  const modality = dataSet.string('x00080060');
-  return modality
+/**
+ * A volume needs a real geometric stack: several single-frame slices.
+ * ponytail: frame-based ids are rejected because wadouri multiframe gives no
+ * per-frame position; drop the check once the metadata provider fills IPP in.
+ */
+export function canBuildVolume(imageIds) {
+  return imageIds.length >= 3 && !imageIds.some((id) => id.includes('?frame='));
 }

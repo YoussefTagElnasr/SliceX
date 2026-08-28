@@ -1,21 +1,11 @@
 import { useEffect, useId, useRef } from 'react';
-import { RenderingEngine, Enums, init as coreInit } from '@cornerstonejs/core';
-import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
-  init as toolsInit,
-  addTool,
   StackScrollTool,
   ToolGroupManager,
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
-
-// cornerstone is global state: initialise it once for the whole app
-const cornerstoneReady = (async () => {
-  await coreInit();
-  await toolsInit();
-  await dicomImageLoaderInit({ maxWebWorkers: 1, useLegacyMetadataProvider: true });
-  addTool(StackScrollTool);
-})();
+import { cornerstoneReady } from '../lib/cornerstone.js';
 
 /** One stack viewport. Owns its rendering engine so it can be dropped anywhere. */
 export default function Viewport({ imageIds }) {
