@@ -42,6 +42,13 @@ export default function Viewport({ imageIds }) {
       const viewport = engine.getViewport(viewportId);
       await viewport.setStack(imageIds, Math.floor(imageIds.length / 2));
       viewport.render();
+
+      const element = viewport.element;
+      element.addEventListener(Enums.Events.STACK_NEW_IMAGE , () => {
+        const imageId = viewport.getCurrentImageIdIndex()
+        console.log(imageId);
+      })
+
     })();
 
     return () => {
