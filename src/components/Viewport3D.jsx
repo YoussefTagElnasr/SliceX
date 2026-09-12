@@ -7,6 +7,7 @@ import {
   imageLoader,
   volumeLoader,
   setVolumesForViewports,
+  metaData,
 } from '@cornerstonejs/core';
 import {
   ToolGroupManager,
@@ -15,15 +16,22 @@ import {
   PanTool,
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
+import vtkPlaneSource from '@kitware/vtk.js/Filters/Sources/PlaneSource';
+import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import { cornerstoneReady } from '../lib/cornerstone.js';
 
 const PRESETS = CONSTANTS.VIEWPORT_PRESETS.map((p) => p.name);
 const DEFAULT_PRESET = 'CT-AAA';
 
-/** Volume-rendered 3D model of the stack. Drag to rotate, right-drag to zoom. */
-export default function Viewport3D({ imageIds }) {
+/**
+ * Volume-rendered 3D model of the stack. Drag to rotate, right-drag to zoom.
+ * `sliceImageId` (optional) draws a plane where that slice sits in the volume.
+ */
+export default function Viewport3D({ imageIds, sliceImageId }) {
   const elementRef = useRef(null);
   const viewportRef = useRef(null);
+  const planeRef = useRef(null);
   // the preset is the tuning knob: what reads as bone on one scanner is soft
   // tissue on another, so it lives on the viewport and never in React state
   const presetRef = useRef(DEFAULT_PRESET);
@@ -65,7 +73,7 @@ export default function Viewport3D({ imageIds }) {
           bindings: [{ mouseButton: csToolsEnums.MouseBindings.Auxiliary }],
         });
         toolGroup.setToolActive(ZoomTool.toolName, {
-          bindings: [{ mouseButton: csToolsEnums.MouseBindings.Secondary }],
+          bindings: [{ mouseButton: csToolsEnums.MouseBindings.Wheel }],
         });
 
         // a wadouri file only has metadata once it has been through the image
@@ -99,12 +107,41 @@ export default function Viewport3D({ imageIds }) {
     return () => {
       cancelled = true;
       viewportRef.current = null;
+      planeRef.current = null; // dies with the renderer
       ToolGroupManager.destroyToolGroup(toolGroupId);
       engine?.destroy();
       // a volume is hundreds of MB, the cache will not evict it on its own
       if (cache.getVolumeLoadObject(volumeId)) cache.removeVolumeLoadObject(volumeId);
     };
   }, [imageIds, uid]);
+
+  // slice plane: world coords are DICOM patient coords, so the image plane
+  // module maps straight onto the volume
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (status !== 'ready' || !viewport || !sliceImageId) return;
+    const plane = metaData.get('imagePlaneModule', sliceImageId);
+    const { imagePositionPatient: o, rowCosines: r, columnCosines: c } = plane ?? {};
+    if (!o || !r || !c) return;
+
+    if (!planeRef.current) {
+      const source = vtkPlaneSource.newInstance();
+      const mapper = vtkMapper.newInstance();
+      mapper.setInputConnection(source.getOutputPort());
+      const actor = vtkActor.newInstance({ mapper });
+      actor.getProperty().setColor(0.2, 0.8, 1);
+      actor.getProperty().setOpacity(0.35);
+      viewport.addActor({ uid: `plane${uid}`, actor });
+      planeRef.current = source;
+    }
+
+    const w = plane.columns * (plane.columnPixelSpacing ?? 1);
+    const h = plane.rows * (plane.rowPixelSpacing ?? 1);
+    planeRef.current.setOrigin(o);
+    planeRef.current.setPoint1(o.map((v, i) => v + r[i] * w));
+    planeRef.current.setPoint2(o.map((v, i) => v + c[i] * h));
+    viewport.render();
+  }, [sliceImageId, status, uid]);
 
   function applyPreset(name) {
     presetRef.current = name;

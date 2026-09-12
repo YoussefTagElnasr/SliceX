@@ -8,7 +8,7 @@ import {
 import { cornerstoneReady } from '../lib/cornerstone.js';
 
 /** One stack viewport. Owns its rendering engine so it can be dropped anywhere. */
-export default function Viewport({ imageIds }) {
+export default function Viewport({ imageIds, onSliceChange }) {
   const elementRef = useRef(null);
   const uid = useId();
 
@@ -40,15 +40,11 @@ export default function Viewport({ imageIds }) {
       });
 
       const viewport = engine.getViewport(viewportId);
+      viewport.element.addEventListener(Enums.Events.STACK_NEW_IMAGE, () => {
+        onSliceChange?.(viewport.getCurrentImageId());
+      });
       await viewport.setStack(imageIds, Math.floor(imageIds.length / 2));
       viewport.render();
-
-      const element = viewport.element;
-      element.addEventListener(Enums.Events.STACK_NEW_IMAGE , () => {
-        const imageId = viewport.getCurrentImageIdIndex()
-        console.log(imageId);
-      })
-
     })();
 
     return () => {
@@ -56,7 +52,7 @@ export default function Viewport({ imageIds }) {
       ToolGroupManager.destroyToolGroup(toolGroupId);
       engine?.destroy();
     };
-  }, [imageIds, uid]);
+  }, [imageIds, uid, onSliceChange]); // pass a stable callback, a new one rebuilds the engine
 
   return (
     <div

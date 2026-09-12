@@ -14,7 +14,6 @@ export const cornerstoneReady = (async () => {
   await coreInit();
   await toolsInit();
   await dicomImageLoaderInit({
-    // a volume decodes every slice up front, so one worker is not enough
     maxWebWorkers: Math.min(4, navigator.hardwareConcurrency || 1),
     useLegacyMetadataProvider: true,
   });

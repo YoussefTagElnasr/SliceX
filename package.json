@@ -14,6 +14,7 @@
     "@cornerstonejs/core": "^5.0.8",
     "@cornerstonejs/dicom-image-loader": "^5.0.8",
     "@cornerstonejs/tools": "^5.0.8",
+    "@kitware/vtk.js": "35.5.3",
     "@tailwindcss/vite": "^4.3.0",
     "dicom-parser": "^1.8.21",
     "react": "^19.2.6",
