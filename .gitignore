@@ -1,5 +1,4 @@
 node_modules
-package-lock.json
 # 30MB of downloaded test DICOM, see README
 sample-data/
 dist
