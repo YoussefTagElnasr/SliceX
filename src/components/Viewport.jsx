@@ -52,7 +52,7 @@ export default function Viewport({ imageIds, onSliceChange }) {
       ToolGroupManager.destroyToolGroup(toolGroupId);
       engine?.destroy();
     };
-  }, [imageIds, uid, onSliceChange]); // pass a stable callback, a new one rebuilds the engine
+  }, [imageIds, uid, onSliceChange]);
 
   return (
     <div
