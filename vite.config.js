@@ -17,5 +17,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ['dicom-parser'],
     exclude: ['@cornerstonejs/dicom-image-loader']
-  }
+  },
+
+  base: '/SliceX/'
 })
